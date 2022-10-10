@@ -1,6 +1,7 @@
 use serde_json::json;
 use worker::*;
 
+mod subscribe_list;
 mod utils;
 
 fn log_request(req: &Request) {
@@ -30,7 +31,9 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
     // Environment bindings like KV Stores, Durable Objects, Secrets, and Variables.
     router
         .get("/", |mut req, ctx| {
-            Response::ok("hello")
+            let list = subscribe_list::get_subscribe_list();
+
+            Response::ok("hey")
         })
         .run(req, env)
         .await
