@@ -25,8 +25,7 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
             let list = subscribe::get_subscribe_list();
 
             for rss in list {
-                let request = Request::new(&rss.rss_url, Method::Get);
-                let response = Fetch::Request(request?).send().await;
+                let storedData = rss.into_store_schema();
             }
 
             Response::ok("hey")

@@ -21,7 +21,7 @@ impl StoreSchema {
     pub fn new(
         name: impl Into<String>,
         rss_url: impl Into<String>,
-        tags: Vec<&str>,
+        tags: Vec<String>,
         description: impl Into<String>,
         link: impl Into<String>,
         publishDate: Date,
@@ -37,7 +37,7 @@ impl StoreSchema {
         Self {
             name: name.into(),
             rss_url: rss_url.into(),
-            tags: tags.iter().map(|&tag| tag.into()).collect(),
+            tags,
             description: description.into(),
             read: false,
             guid,
