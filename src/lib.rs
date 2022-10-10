@@ -2,6 +2,7 @@ use serde_json::json;
 use worker::*;
 
 mod latest_pushed_date_memory;
+mod notion;
 mod rss;
 mod store;
 mod subscribe;
