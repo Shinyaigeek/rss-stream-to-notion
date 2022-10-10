@@ -1,6 +1,6 @@
 ---
 source: src/rss.rs
-assertion_line: 367
+assertion_line: 373
 expression: rss
 ---
 Ok(
