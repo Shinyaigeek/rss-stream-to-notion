@@ -1,6 +1,7 @@
 use serde_json::json;
 use worker::*;
 
+mod latest_pushed_date_memory;
 mod rss;
 mod store;
 mod subscribe;
@@ -25,8 +26,12 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
         .get_async("/", |mut req, ctx| async move {
             let list = subscribe::get_subscribe_list();
 
+            let kv = ctx.kv("LATEST_PUSHED_DATES")?;
+
             for xml in list {
-                // let latest_pushed_date = ctx.durable_objects
+                let latest_pushed_date =
+                    latest_pushed_date_memory::get_latest_pushed_date(&kv, &xml.rss_url.clone())
+                        .await;
                 let rss = xml.into_rss();
             }
 
