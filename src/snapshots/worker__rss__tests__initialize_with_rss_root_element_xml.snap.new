@@ -1,0 +1,37 @@
+---
+source: src/rss.rs
+assertion_line: 227
+expression: rss
+---
+Ok(
+    Rss {
+        items: [
+            RssItem {
+                id: "guid",
+                blog_title: "blog title",
+                article_title: "article title 1",
+                published_date: None,
+                article_url: Some(
+                    "link",
+                ),
+                categories: [
+                    "blog title",
+                ],
+                description: "article description 1",
+            },
+            RssItem {
+                id: "guid",
+                blog_title: "blog title",
+                article_title: "article title 2",
+                published_date: None,
+                article_url: Some(
+                    "link",
+                ),
+                categories: [
+                    "blog title",
+                ],
+                description: "article description 2",
+            },
+        ],
+    },
+)

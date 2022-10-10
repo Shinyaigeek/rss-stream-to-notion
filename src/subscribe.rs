@@ -1,5 +1,5 @@
-use crate::store::StoreSchema;
-use roxmltree::Document;
+use crate::rss::Rss;
+use std::result::Result;
 use worker::{Date, Fetch, Method, Request};
 
 pub struct SubscribedRSS {
@@ -15,32 +15,30 @@ impl SubscribedRSS {
         }
     }
 
-    pub async fn into_store_schema(self) -> StoreSchema {
-        let request = Request::new(&self.rss_url, Method::Get).unwrap();
-        let mut response = Fetch::Request(request).send().await.unwrap();
-        let text = response.text().await.unwrap();
-        let doc = Document::parse(&text).unwrap();
-        let title = doc
-            .descendants()
-            .find(|n| n.has_tag_name("title"))
-            .unwrap()
-            .text()
-            .unwrap();
-        let description = doc
-            .descendants()
-            .find(|n| n.has_tag_name("description"))
-            .unwrap()
-            .text()
-            .unwrap();
+    pub async fn into_rss(self) -> Result<(), worker::Error> {
+        let request = match Request::new(&self.rss_url, Method::Get) {
+            Ok(request) => request,
+            Err(err) => {
+                // TODO(#1) Inherite error information to log more detailed error
+                return Err(err);
+            }
+        };
+        let mut response = match Fetch::Request(request).send().await {
+            Ok(response) => response,
+            Err(err) => {
+                // TODO(#1) Inherite error information to log more detailed error
+                return Err(err);
+            }
+        };
+        let rss_text = match response.text().await {
+            Ok(rss_text) => rss_text,
+            Err(err) => {
+                // TODO(#1) Inherite error information to log more detailed error
+                return Err(err);
+            }
+        };
 
-        StoreSchema::new(
-            title,
-            &self.rss_url,
-            self.tags,
-            description,
-            &self.rss_url,
-            Date::now(),
-        )
+        return Ok(());
     }
 }
 
