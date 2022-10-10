@@ -1,6 +1,7 @@
 use serde_json::json;
 use worker::*;
 
+mod latest_pushed_date_memory;
 mod rss;
 mod store;
 mod subscribe;
@@ -26,7 +27,7 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
             let list = subscribe::get_subscribe_list();
 
             for rss in list {
-                let storedData = rss.into_rss();
+                let rss = rss.into_rss();
             }
 
             Response::ok("hey")
