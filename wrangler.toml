@@ -20,3 +20,12 @@ type = "CompiledWasm"
 
 # read more about configuring your Worker via wrangler.toml at:
 # https://developers.cloudflare.com/workers/cli-wrangler/configuration
+
+[durable_objects]
+bindings = [
+  { name = "LATEST_PUSHED_DATES", class_name = "Latest_Pushed_Dates" } # the `class_name` uses the Rust struct identifier name
+]
+
+[[migrations]]
+tag = "v1" # Should be unique for each entry
+new_classes = ["Latest_Pushed_Dates"] # Array of new classes

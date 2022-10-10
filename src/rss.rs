@@ -37,7 +37,7 @@ impl RssItem {
 }
 
 #[derive(Debug)]
-enum RssError {
+pub enum RssError {
     Xml(Error),
     Markup(String),
 }
@@ -48,7 +48,7 @@ pub struct Rss {
 }
 
 impl Rss {
-    fn from_xml(xml: &str) -> Result<Self, RssError> {
+    pub fn from_xml(xml: &str) -> Result<Self, RssError> {
         let document = match Document::parse(&xml) {
             Ok(document) => document,
             Err(err) => return Err(RssError::Xml(err)),
