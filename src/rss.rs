@@ -1,3 +1,4 @@
+use crate::store::StoreSchema;
 use insta;
 use roxmltree::{Document, Error};
 use std::result::Result;
@@ -354,6 +355,34 @@ impl Rss {
             .collect();
 
         Ok(Self { items })
+    }
+
+    pub fn exclude_latest_published_date(&self) -> Date {
+        let latest_pushed_date_item = self.items.iter().reduce(|accum, item| {
+            let item_published_date = match &item.published_date {
+                Some(item_published_date) => item_published_date.as_millis(),
+                None => 0,
+            };
+            let accum_published_date = match &accum.published_date {
+                Some(accum_published_date) => accum_published_date.as_millis(),
+                None => 0,
+            };
+            if accum_published_date >= item_published_date {
+                accum
+            } else {
+                item
+            }
+        });
+
+        let latest_pushed_date = match &latest_pushed_date_item {
+            Some(latest_pushed_date_item) => match &latest_pushed_date_item.published_date {
+                Some(latest_pushed_date) => latest_pushed_date.as_millis(),
+                None => 0,
+            },
+            None => 0,
+        };
+
+        Date::new(DateInit::Millis(latest_pushed_date))
     }
 }
 

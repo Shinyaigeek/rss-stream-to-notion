@@ -29,9 +29,11 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
             let kv = ctx.kv("LATEST_PUSHED_DATES")?;
 
             for xml in list {
+                let rss_url = xml.rss_url.clone();
+                let tags = xml.tags.clone();
+
                 let latest_pushed_date =
-                    latest_pushed_date_memory::get_latest_pushed_date(&kv, &xml.rss_url.clone())
-                        .await;
+                    latest_pushed_date_memory::get_latest_pushed_date(&kv, &rss_url).await;
                 let rss = match xml.into_rss().await {
                     Ok(rss) => rss,
                     Err(err) => return Response::error("internal server error", 500),
@@ -40,6 +42,7 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
                     Some(latest_pushed_date) => latest_pushed_date.as_millis(),
                     None => 0,
                 };
+                let latest_pushed_date = rss.exclude_latest_published_date();
                 let items = rss.items.iter().filter(|item| {
                     let item_published_date = match &item.published_date {
                         Some(item_published_date) => item_published_date.as_millis(),
@@ -47,9 +50,28 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
                     };
                     item_published_date > latest_pushed_date_millis
                 });
+
+                let store_columns = items.map(|item| {
+                    store::StoreSchema::new(
+                        &item.id,
+                        &item.blog_title,
+                        &item.article_title,
+                        rss_url.clone(),
+                        tags.clone(),
+                        &item.description,
+                        &item.article_url,
+                        &item.published_date,
+                    )
+                });
+                latest_pushed_date_memory::put_latest_pushed_date(
+                    &kv,
+                    &rss_url,
+                    latest_pushed_date,
+                )
+                .await;
             }
 
-            Response::ok("hey")
+            Response::ok("ok")
         })
         .run(req, env)
         .await
