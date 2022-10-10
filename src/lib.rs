@@ -32,7 +32,21 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
                 let latest_pushed_date =
                     latest_pushed_date_memory::get_latest_pushed_date(&kv, &xml.rss_url.clone())
                         .await;
-                let rss = xml.into_rss();
+                let rss = match xml.into_rss().await {
+                    Ok(rss) => rss,
+                    Err(err) => return Response::error("internal server error", 500),
+                };
+                let latest_pushed_date_millis = match latest_pushed_date {
+                    Some(latest_pushed_date) => latest_pushed_date.as_millis(),
+                    None => 0,
+                };
+                let items = rss.items.iter().filter(|item| {
+                    let item_published_date = match &item.published_date {
+                        Some(item_published_date) => item_published_date.as_millis(),
+                        None => 0,
+                    };
+                    item_published_date > latest_pushed_date_millis
+                });
             }
 
             Response::ok("hey")
