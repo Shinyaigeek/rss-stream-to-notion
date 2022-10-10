@@ -1,6 +1,7 @@
 use serde_json::json;
 use worker::*;
 
+mod rss;
 mod store;
 mod subscribe;
 mod utils;
