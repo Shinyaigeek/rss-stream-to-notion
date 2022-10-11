@@ -1,6 +1,7 @@
 use serde::{Serialize};
 use crate::store::StoreSchema;
 use worker::{Date, Error, Fetch, Headers, Method, Request, RequestInit};
+use wasm_bindgen::JsValue;
 
 const api_url_create_page: &str = "https://api.notion.com/v1/pages";
 const api_version: &str = "2022-06-28";
@@ -47,9 +48,9 @@ impl NotionCommand {
         };
         notion_query.remove_matches("__WILL_BE_REPLACED__");
 
-        request_init.with_body(notion_query.into());
+        request_init.with_body(Some(JsValue::from_str(&notion_query)));
 
-        let mut request = match Request::new_with_init(&api_url_create_page, &request_init) {
+        let request = match Request::new_with_init(&api_url_create_page, &request_init) {
             Ok(request) => request,
             Err(err) => {
                 // TODO(#1) Inherite error information to log more detailed error
