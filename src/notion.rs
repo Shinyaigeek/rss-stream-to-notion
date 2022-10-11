@@ -1,14 +1,14 @@
-use serde::{Serialize};
 use crate::store::StoreSchema;
-use worker::{Date, Error, Fetch, Headers, Method, Request, RequestInit};
+use serde::Serialize;
 use wasm_bindgen::JsValue;
+use worker::{Date, Error, Fetch, Headers, Method, Request, RequestInit};
 
 const api_url_create_page: &str = "https://api.notion.com/v1/pages";
 const api_version: &str = "2022-06-28";
 
 pub enum NotionCommandError {
     WorkerError(Error),
-    SerializeError(serde_json::Error)
+    SerializeError(serde_json::Error),
 }
 
 pub struct NotionCommand {
@@ -39,12 +39,12 @@ impl NotionCommand {
 
         request_init.with_headers(headers);
 
-        let notion_query = NotionQuery::from_store_schema(column, self.database_id);
+        let notion_query = NotionQuery::from_store_schema(column, self.database_id.clone());
 
         let mut notion_query = match serde_json::to_string(&notion_query) {
             Ok(query) => query,
             // TODO(#1) Inherite error information to log more detailed error
-            Err(err) => return Err(NotionCommandError::SerializeError(err))
+            Err(err) => return Err(NotionCommandError::SerializeError(err)),
         };
         notion_query.remove_matches("__WILL_BE_REPLACED__");
 
@@ -144,8 +144,8 @@ struct NotionPropertiesQuery {
     tags: NotionMultiSelectQuery,
     guid: NotionRichTextQuery,
     description: NotionRichTextQuery,
-    link: NotionUrlQuery,
-    published_date: NotionDateQuery,
+    link: Option<NotionUrlQuery>,
+    published_date: Option<NotionDateQuery>,
 }
 
 #[derive(Serialize)]
@@ -160,7 +160,9 @@ impl NotionQuery {
         let multi_select: Vec<NotionSelectQuery> = store_schema
             .tags
             .iter()
-            .map(|tag| NotionSelectQuery { name: tag.to_string() })
+            .map(|tag| NotionSelectQuery {
+                name: tag.to_string(),
+            })
             .collect();
         Self {
             parent: NotionParentQuery {
@@ -197,17 +199,21 @@ impl NotionQuery {
                     rich_text: vec![NotionTextQuery {
                         __WILL_BE_REPLACED__type: "text".to_string(),
                         text: NotionContentQuery {
-                            content: store_schema.description,
+                            content: store_schema.description.clone(),
                         },
                     }],
                 },
-                link: NotionUrlQuery {
-                    url: store_schema.link,
+                link: match store_schema.link {
+                    Some(link) => Some(NotionUrlQuery { url: link }),
+                    None => None,
                 },
-                published_date: NotionDateQuery {
-                    date: NotionStartDateQuery {
-                        start: store_schema.published_date,
-                    },
+                published_date: match store_schema.published_date {
+                    Some(published_date) => Some(NotionDateQuery {
+                        date: NotionStartDateQuery {
+                            start: published_date.to_string(),
+                        },
+                    }),
+                    None => None,
                 },
             },
             children: vec![NotionChildQuery {
