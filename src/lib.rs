@@ -1,4 +1,6 @@
-use serde_json::json;
+#![feature(string_remove_matches)]
+
+use serde_json;
 use worker::*;
 
 mod latest_pushed_date_memory;

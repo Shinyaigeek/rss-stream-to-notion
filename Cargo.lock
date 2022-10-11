@@ -795,6 +795,7 @@ dependencies = [
  "insta",
  "rand",
  "roxmltree",
+ "serde",
  "serde_json",
  "worker 0.0.9",
 ]
