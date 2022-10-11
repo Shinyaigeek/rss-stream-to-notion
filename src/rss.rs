@@ -258,40 +258,34 @@ impl Rss {
                     match item.children().find(|child| child.has_tag_name("title")) {
                         Some(article_title_element) => article_title_element,
                         None => {
+                            worker::console_log!(
+                                "item element should have title element in its children"
+                            );
                             return Err(RssError::Markup(
                                 "item element should have title element in its children".into(),
-                            ))
+                            ));
                         }
                     };
 
                 let article_title = match article_title_element.text() {
                     Some(article_title) => article_title,
                     None => {
+                        worker::console_log!("title element should have text content");
                         return Err(RssError::Markup(
                             "title element should have text content".into(),
-                        ))
+                        ));
                     }
                 };
 
-                let description_element = match item
+                let description = match item
                     .children()
                     .find(|child| child.has_tag_name("description"))
                 {
-                    Some(description_element) => description_element,
-                    None => {
-                        return Err(RssError::Markup(
-                            "item element should have description element in its children".into(),
-                        ))
-                    }
-                };
-
-                let description = match description_element.text() {
-                    Some(description) => description,
-                    None => {
-                        return Err(RssError::Markup(
-                            "description element should have text content".into(),
-                        ))
-                    }
+                    Some(description_element) => match description_element.text() {
+                        Some(description) => description,
+                        None => ""
+                    },
+                    None => ""
                 };
 
                 let article_url = match item.children().find(|child| child.has_tag_name("link")) {
