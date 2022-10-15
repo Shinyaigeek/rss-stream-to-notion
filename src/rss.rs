@@ -296,7 +296,7 @@ impl Rss {
                     None => None,
                 };
 
-                let id = match item.children().find(|child| child.has_tag_name("guid")) {
+                let id = match item.children().find(|child| child.has_tag_name("guid") || child.has_tag_name("id")) {
                     Some(guid_element) => match guid_element.text() {
                         Some(guid) => guid.to_string(),
                         None => {
