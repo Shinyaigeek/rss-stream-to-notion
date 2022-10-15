@@ -74,7 +74,6 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
                 });
 
                 for store_column in store_columns {
-                    worker::console_log!("stored");
                     let res = notion_query.insert_column(store_column).await;
                     match res {
                         Ok(_) => {},

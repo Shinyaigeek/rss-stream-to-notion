@@ -154,7 +154,12 @@ impl Rss {
                 let article_url = match item.children().find(|child| child.has_tag_name("link")) {
                     Some(link_element) => match link_element.text() {
                         Some(link) => Some(link.to_string()),
-                        None => None,
+                        None => {
+                            match link_element.attribute("href") {
+                                Some(link) => Some(link.to_string()),
+                                None => None
+                            }
+                        },
                     },
                     None => None,
                 };
@@ -291,7 +296,12 @@ impl Rss {
                 let article_url = match item.children().find(|child| child.has_tag_name("link")) {
                     Some(link_element) => match link_element.text() {
                         Some(link) => Some(link.to_string()),
-                        None => None,
+                        None => {
+                            match link_element.attribute("href") {
+                                Some(link) => Some(link.to_string()),
+                                None => None
+                            }
+                        },
                     },
                     None => None,
                 };
