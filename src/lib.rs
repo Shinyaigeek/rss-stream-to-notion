@@ -31,6 +31,12 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
 
             let kv = ctx.kv("LATEST_PUSHED_DATES")?;
 
+            let database_id = ctx.secret("database_id").unwrap().to_string();
+            let notify_user_id = ctx.secret("notify_user_id").unwrap().to_string();
+            let notion_api_key = ctx.secret("notion_api_key").unwrap().to_string();
+
+            let notion_query = notion::NotionCommand::build(database_id, notify_user_id, notion_api_key);
+
             for xml in list {
                 let rss_url = xml.rss_url.clone();
                 let tags = xml.tags.clone();
@@ -51,7 +57,7 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
                         Some(item_published_date) => item_published_date.as_millis(),
                         None => 0,
                     };
-                    item_published_date > latest_pushed_date_millis
+                    true
                 });
 
                 let store_columns = items.map(|item| {
@@ -66,6 +72,16 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
                         &item.published_date,
                     )
                 });
+
+                for store_column in store_columns {
+                    worker::console_log!("stored");
+                    let res = notion_query.insert_column(store_column).await;
+                    match res {
+                        Ok(_) => {},
+                        Err(err) => worker::console_log!("err: {:?}", err)
+                    };
+                }
+
                 latest_pushed_date_memory::put_latest_pushed_date(
                     &kv,
                     &rss_url,

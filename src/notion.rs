@@ -4,8 +4,9 @@ use wasm_bindgen::JsValue;
 use worker::{Date, Error, Fetch, Headers, Method, Request, RequestInit};
 
 const api_url_create_page: &str = "https://api.notion.com/v1/pages";
-const api_version: &str = "2022-06-28";
+const api_version: &str = "2022-02-22";
 
+#[derive(Debug)]
 pub enum NotionCommandError {
     WorkerError(Error),
     SerializeError(serde_json::Error),
@@ -27,15 +28,15 @@ impl NotionCommand {
     }
 
     pub async fn insert_column(&self, column: StoreSchema) -> Result<(), NotionCommandError> {
-        let mut request_init = RequestInit::default();
+        let mut request_init = RequestInit::new();
 
         request_init.with_method(Method::Post);
 
         let mut headers = Headers::default();
 
-        headers.append("Content-Type", "application/json");
-        headers.append("Authorization", &format!("Bearer {}", self.notion_api_key));
-        headers.append("Notion-Version", api_version);
+        headers.append("Content-Type", "application/json").unwrap();
+        headers.append("Authorization", &format!("Bearer {}", self.notion_api_key)).unwrap();
+        headers.append("Notion-Version", api_version).unwrap();
 
         request_init.with_headers(headers);
 
@@ -66,8 +67,8 @@ impl NotionCommand {
             }
         };
 
-        let rss_text = match response.text().await {
-            Ok(rss_text) => rss_text,
+        let text = match response.text().await {
+            Ok(text) => text,
             Err(err) => {
                 // TODO(#1) Inherite error information to log more detailed error
                 return Err(NotionCommandError::WorkerError(err));
@@ -97,12 +98,14 @@ struct NotionTextQuery {
 
 #[derive(Serialize)]
 struct NotionTitleQuery {
-    text: Vec<NotionTextQuery>,
+    __WILL_BE_REPLACED__type: String,
+    title: Vec<NotionTextQuery>,
 }
 
 #[derive(Serialize)]
 struct NotionRichTextQuery {
     rich_text: Vec<NotionTextQuery>,
+    __WILL_BE_REPLACED__type: String,
 }
 
 #[derive(Serialize)]
@@ -139,12 +142,14 @@ struct NotionChildQuery {
 
 #[derive(Serialize)]
 struct NotionPropertiesQuery {
-    blog_title: NotionRichTextQuery,
+    blog_name: NotionRichTextQuery,
     article_title: NotionTitleQuery,
     tags: NotionMultiSelectQuery,
     guid: NotionRichTextQuery,
     description: NotionRichTextQuery,
+    #[serde(skip_serializing_if = "Option::is_none")]
     link: Option<NotionUrlQuery>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     published_date: Option<NotionDateQuery>,
 }
 
@@ -152,7 +157,6 @@ struct NotionPropertiesQuery {
 struct NotionQuery {
     parent: NotionParentQuery,
     properties: NotionPropertiesQuery,
-    children: Vec<NotionChildQuery>,
 }
 
 impl NotionQuery {
@@ -170,21 +174,23 @@ impl NotionQuery {
                 database_id,
             },
             properties: NotionPropertiesQuery {
-                blog_title: NotionRichTextQuery {
+                article_title: NotionTitleQuery {
+                    title: vec![NotionTextQuery {
+                        __WILL_BE_REPLACED__type: "text".to_string(),
+                        text: NotionContentQuery {
+                            content: store_schema.article_title,
+                        },
+                    }],
+                    __WILL_BE_REPLACED__type: "title".to_string(),
+                },
+                blog_name: NotionRichTextQuery {
                     rich_text: vec![NotionTextQuery {
                         __WILL_BE_REPLACED__type: "text".to_string(),
                         text: NotionContentQuery {
                             content: store_schema.blog_title,
                         },
                     }],
-                },
-                article_title: NotionTitleQuery {
-                    text: vec![NotionTextQuery {
-                        __WILL_BE_REPLACED__type: "text".to_string(),
-                        text: NotionContentQuery {
-                            content: store_schema.article_title,
-                        },
-                    }],
+                    __WILL_BE_REPLACED__type: "rich_text".to_string(),
                 },
                 tags: NotionMultiSelectQuery { multi_select },
                 guid: NotionRichTextQuery {
@@ -194,6 +200,7 @@ impl NotionQuery {
                             content: store_schema.guid,
                         },
                     }],
+                    __WILL_BE_REPLACED__type: "rich_text".to_string(),
                 },
                 description: NotionRichTextQuery {
                     rich_text: vec![NotionTextQuery {
@@ -202,6 +209,7 @@ impl NotionQuery {
                             content: store_schema.description.clone(),
                         },
                     }],
+                    __WILL_BE_REPLACED__type: "rich_text".to_string(),
                 },
                 link: match store_schema.link {
                     Some(link) => Some(NotionUrlQuery { url: link }),
@@ -216,18 +224,6 @@ impl NotionQuery {
                     None => None,
                 },
             },
-            children: vec![NotionChildQuery {
-                object: "block".to_string(),
-                __WILL_BE_REPLACED__type: "paragraph".to_string(),
-                paragraph: NotionRichTextQuery {
-                    rich_text: vec![NotionTextQuery {
-                        __WILL_BE_REPLACED__type: "text".to_string(),
-                        text: NotionContentQuery {
-                            content: store_schema.description,
-                        },
-                    }],
-                },
-            }],
         }
     }
 }
